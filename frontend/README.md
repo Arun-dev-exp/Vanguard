@@ -1,17 +1,38 @@
-# Frontend — SOC Dashboard (PRD-3)
+# 🛡️ Vanguard — SOC Dashboard (Frontend)
 
-This directory will contain the SOC Dashboard frontend for Project Vanguard.
+Next.js application powering the Security Operations Center dashboard.
 
-## Planned Features (PRD-3)
-- Active Scam Campaigns panel
-- Flagged Entities panel
-- **Live Call Monitoring** section (data from ScamGuard WebSocket)
-- Real-time risk escalation toast notifications
-- Call scam type breakdown charts
+## Tech Stack
 
-## Data Sources
-- ScamGuard: `GET /api/v1/calls/active`, `GET /api/v1/calls/history`, `ws://host/ws/calls`
-- Risk Orchestrator: `ws://host/ws/alerts`
+- **Framework:** Next.js 16
+- **Styling:** Tailwind CSS 4
+- **Language:** JavaScript (JSX)
 
-## Setup
-Coming soon — React/Next.js application.
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+```
+frontend/
+├── src/
+│   ├── app/            # Next.js App Router pages
+│   │   ├── page.js     # Main SOC Dashboard
+│   │   ├── landing/    # Landing page
+│   │   ├── action-center/
+│   │   ├── fraud-shield/
+│   │   ├── policy-control/
+│   │   └── system-health/
+│   ├── components/     # Reusable UI components
+│   │   ├── layout/     # Dashboard layout, sidebar
+│   │   └── shared/     # Shared components
+│   ├── hooks/          # Custom React hooks
+│   └── lib/            # Mock data & API utilities
+└── public/             # Static assets
+```
