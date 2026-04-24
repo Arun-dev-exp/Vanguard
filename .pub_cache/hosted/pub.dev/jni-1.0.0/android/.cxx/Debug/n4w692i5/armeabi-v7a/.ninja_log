@@ -1,0 +1,6 @@
+# ninja log v5
+21	118	7987534605162323	CMakeFiles/jni.dir/include/dart_api_dl.c.o	a916999e64e26d4
+1	175	7987534605748605	CMakeFiles/jni.dir/dartjni.c.o	5936f484056cf0f0
+12	347	7987534607408355	CMakeFiles/jni.dir/third_party/global_jni_env.c.o	78125c81e5073d82
+347	474	7987534608665578	A:/Venguard/mobile-app/scamguard/build/jni/intermediates/cxx/Debug/n4w692i5/obj/armeabi-v7a/libdartjni.so	28805367079bb787
+7	238	7987554029772447	A:/Venguard/mobile-app/scamguard/build/jni/intermediates/cxx/Debug/n4w692i5/obj/armeabi-v7a/libdartjni.so	28805367079bb787
