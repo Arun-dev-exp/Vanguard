@@ -1,0 +1,13 @@
+# Project Vanguard — Backend Dependencies
+
+# Telegram Bot
+python-telegram-bot>=21.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# NLP / Multilingual
+langdetect>=1.0.9
+deep-translator>=1.11.4
+
+# HuggingFace (optional — API-based, no local model)
+huggingface-hub>=0.20.0
