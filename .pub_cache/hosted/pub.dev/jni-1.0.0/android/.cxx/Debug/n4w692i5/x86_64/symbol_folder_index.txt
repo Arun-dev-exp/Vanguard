@@ -1,0 +1,1 @@
+A:\Venguard\mobile-app\scamguard\build\jni\intermediates\cxx\Debug\n4w692i5\obj\x86_64

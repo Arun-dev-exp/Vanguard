@@ -1,0 +1,3 @@
+A:/Venguard/.pub_cache/hosted/pub.dev/jni-1.0.0/android/.cxx/Debug/n4w692i5/x86_64/CMakeFiles/jni.dir
+A:/Venguard/.pub_cache/hosted/pub.dev/jni-1.0.0/android/.cxx/Debug/n4w692i5/x86_64/CMakeFiles/edit_cache.dir
+A:/Venguard/.pub_cache/hosted/pub.dev/jni-1.0.0/android/.cxx/Debug/n4w692i5/x86_64/CMakeFiles/rebuild_cache.dir
