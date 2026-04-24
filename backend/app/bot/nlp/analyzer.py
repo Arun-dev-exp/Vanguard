@@ -132,7 +132,7 @@ def _build_explanation(classification: dict, entities: dict) -> str:
     else:
         parts.append(f"LOW RISK: This message has some suspicious indicators.")
 
-    for reason in classification.get("reasons", [])[:4]:
+    for reason in classification.get("reasons", [])[:6]:
         parts.append(f"- {reason}")
 
     parts.append("Do NOT click links, share OTPs, or transfer money to unknown accounts.")
