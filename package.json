@@ -1,0 +1,30 @@
+{
+  "name": "scamguard",
+  "version": "1.0.0",
+  "description": "ScamGuard — Real-Time Voice Call Intelligence for Project Vanguard",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run test/analyzer.test.js test/risk-mapper.test.js",
+    "test:integration": "vitest run test/call-flow.test.js"
+  },
+  "dependencies": {
+    "@deepgram/sdk": "^3.9.0",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/formbody": "^8.0.0",
+    "@fastify/websocket": "^11.0.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "fastify": "^5.2.0",
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
