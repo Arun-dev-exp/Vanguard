@@ -9,5 +9,10 @@ requests>=2.31.0
 langdetect>=1.0.9
 deep-translator>=1.11.4
 
-# HuggingFace (optional — API-based, no local model)
+# HuggingFace ML
 huggingface-hub>=0.20.0
+
+# ML Models (vaibhav07112004/fraud-detection-models)
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
