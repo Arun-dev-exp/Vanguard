@@ -6,7 +6,7 @@
 import supabase from "./db.js";
 
 /**
- * Start tracking a new call.
+ * Start tracking a new call
  */
 export async function startCall(callSid, callerNumber, calledNumber, userName = "Unknown", userChatId = null) {
   const { data, error } = await supabase
