@@ -1,146 +1,163 @@
-# 🛡️ ScamGuard — Real-Time Voice Call Intelligence
+# 🛡️ Project Vanguard
 
-**Project Vanguard | PRD-4**
-
-ScamGuard is the **voice layer** of Project Vanguard. It monitors live phone calls in real time — transcribing audio via Deepgram, analyzing transcripts through the PRD-1 AI Engine, scoring risk via PRD-2, and alerting users mid-call via Telegram before any damage is done.
+**Real-time fraud detection and prevention platform** — protecting users from scam calls, fraudulent payments, and social engineering attacks through AI-powered intelligence.
 
 ## Architecture
 
 ```
-User's phone receives a call
-        │
-        ▼
-Twilio intercepts audio → POST /incoming-call
-        │
-        ▼
-WebSocket receives mulaw audio chunks
-        │
-        ▼
-Deepgram streaming STT → live transcript
-        │
-        ▼  (every ~40 words)
-POST /api/v1/analyze  ◄── PRD-1
-        │
-        ├──► UPI IDs found? → POST /payment/check ◄── PRD-2
-        │
-        ▼
-Map risk level → Telegram alert
-        │
-        ├──► FRAUD? → POST /action/report ◄── PRD-2
-        │
-        ▼
-Push events → ws://host/ws/calls ►── PRD-3 SOC Dashboard
+┌─────────────────────────────────────────────────────────────┐
+│                    Project Vanguard                         │
+├─────────────┬──────────────┬──────────────┬─────────────────┤
+│  AI Engine  │    Risk      │  ScamGuard   │ SOC Dashboard   │
+│   (PRD-1)   │ Orchestrator │   (PRD-4)    │    (PRD-3)      │
+│             │   (PRD-2)    │              │                 │
+│ • NLP       │ • Risk Score │ • Twilio     │ • Live Calls    │
+│ • Classify  │ • Payment    │ • Deepgram   │ • Campaigns     │
+│ • Entities  │   Check      │ • Telegram   │ • Entities      │
+│ • Campaigns │ • Entity     │   Alerts     │ • Analytics     │
+│             │   Registry   │ • WebSocket  │                 │
+└──────┬──────┴───────┬──────┴──────┬───────┴────────┬────────┘
+       │              │             │                │
+       └──────────────┴─────────────┴────────────────┘
+                    Supabase (PostgreSQL)
 ```
+
+## Repository Structure
+
+```
+vanguard/
+├── ai-services/                 # PRD-1 — AI Fraud Intelligence Engine
+│   ├── src/
+│   │   ├── routes/analyze.js    #   POST /api/v1/analyze
+│   │   ├── services/            #   Classification, extraction, campaigns
+│   │   └── lib/supabase.js      #   Database client
+│   ├── __tests__/               #   Test suite
+│   ├── schema.sql               #   Database schema
+│   └── package.json
+│
+├── backend/
+│   ├── risk-orchestrator/       # PRD-2 — Risk Scoring & Payment Interception
+│   │   ├── src/
+│   │   │   ├── routes/          #   /payment/check, /action/report, /risk/lookup
+│   │   │   ├── services/        #   Risk scoring, entity registry, action engine
+│   │   │   ├── models/          #   Entity risk, payment check models
+│   │   │   ├── middleware/      #   Rate limiter, validator, error handler
+│   │   │   ├── websocket/       #   Real-time alert broadcasting
+│   │   │   └── db/              #   Supabase client, migrations, seeds
+│   │   ├── tests/               #   Unit + integration tests
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   │
+│   └── scamguard/               # PRD-4 — Real-Time Voice Call Intelligence
+│       ├── src/
+│       │   ├── server.js        #   Fastify server + call orchestration
+│       │   ├── analyzer.js      #   PRD-1 integration
+│       │   ├── risk-mapper.js   #   PRD-2 risk → alert severity
+│       │   ├── telegram.js      #   Bot registration + alerts
+│       │   ├── deepgram.js      #   Streaming speech-to-text
+│       │   ├── call-manager.js  #   Call lifecycle (Supabase)
+│       │   └── ws-broadcaster.js#   WebSocket for SOC Dashboard
+│       ├── routes/              #   /incoming-call, /calls/active, /calls/history
+│       ├── test/                #   Unit + integration tests
+│       ├── Dockerfile
+│       └── package.json
+│
+├── frontend/                    # PRD-3 — SOC Dashboard (planned)
+│
+├── mobile-app/                  # Mobile application (planned)
+│
+├── docs/
+│   ├── PRD-1-AI-Fraud-Intelligence.md
+│   ├── PRD-2-Risk-Orchestrator-Interception.md
+│   └── PRD-4-ScamGuard-Integration.md
+│
+├── .env.example                 # All environment variables
+├── .gitignore
+└── README.md
+```
+
+## Services
+
+| Service | Port | Description | Status |
+|---------|------|-------------|--------|
+| AI Engine (PRD-1) | 8000 | NLP-based fraud classification & entity extraction | ✅ Active |
+| Risk Orchestrator (PRD-2) | 4000 | Composite risk scoring & payment interception | ✅ Active |
+| ScamGuard (PRD-4) | 3001 | Real-time voice call monitoring & Telegram alerts | ✅ Active |
+| SOC Dashboard (PRD-3) | 3000 | Security Operations Center UI | 🔜 Planned |
 
 ## Quick Start
 
-### 1. Prerequisites
-- Node.js 20+
-- Supabase project (for database)
-- Deepgram API key (for speech-to-text)
-- Telegram Bot token (for user alerts)
-- Twilio account (for audio streaming)
-
-### 2. Setup
-
+### 1. Clone & Setup
 ```bash
-# Install dependencies
-npm install
-
-# Configure environment
+git clone https://github.com/Arun-dev-exp/Vanguard.git
+cd Vanguard
 cp .env.example .env
-# Edit .env with your actual keys
-
-# Apply database schema to Supabase
-# Run supabase/migrations/001_initial_schema.sql in your Supabase SQL Editor
+# Fill in your actual API keys in .env
 ```
 
-### 3. Run
-
+### 2. Start AI Engine (PRD-1)
 ```bash
-# Development (with auto-reload)
-npm run dev
-
-# Production
-npm start
-
-# Docker
-docker-compose up -d
+cd ai-services
+npm install
+npm start    # Runs on :8000
 ```
 
-### 4. Test
-
+### 3. Start Risk Orchestrator (PRD-2)
 ```bash
-npm test
+cd backend/risk-orchestrator
+npm install
+npm start    # Runs on :4000
 ```
 
-## API Endpoints
+### 4. Start ScamGuard (PRD-4)
+```bash
+cd backend/scamguard
+npm install
+npm run dev  # Runs on :3001
+```
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/health` | Health check with uptime |
-| `POST` | `/incoming-call` | Twilio webhook (returns TwiML) |
-| `GET` | `/api/v1/calls/active` | All actively monitored calls |
-| `GET` | `/api/v1/calls/history` | Completed calls with filters |
-| `WS` | `/ws/calls` | Live call events for SOC Dashboard |
-| `WS` | `/media-stream` | Twilio audio stream (internal) |
+### 5. Run Tests
+```bash
+# PRD-1 tests
+cd ai-services && npm test
 
-## WebSocket Events (`/ws/calls`)
+# PRD-2 tests
+cd backend/risk-orchestrator && npm test
 
-| Event | When | Key Fields |
-|-------|------|------------|
-| `CALL_STARTED` | New call intercepted | `call_sid`, `caller_number`, `called_number` |
-| `RISK_ESCALATED` | Risk level increased | `risk_level`, `composite_score`, `campaign_name` |
-| `CALL_ENDED` | Call completed | `duration_seconds`, `final_risk_level` |
+# PRD-4 tests
+cd backend/scamguard && npm test
+```
 
-## Alert Levels
+## Data Flow
 
-| Risk Level | Score | Telegram Alert | Action |
-|------------|-------|----------------|--------|
-| LOW | < 0.50 | None | Monitor only |
-| MEDIUM | 0.50–0.79 | 🟡 Warning | Stay alert |
-| HIGH | 0.80–0.84 | 🟠 High Alert | Don't share info |
-| HIGH | ≥ 0.85 | 🔴 DANGER | Hang up now |
-
-## Environment Variables
-
-See [`.env.example`](.env.example) for the full list.
+```
+User receives scam call
+    → Twilio streams audio to ScamGuard (PRD-4)
+    → Deepgram transcribes in real-time
+    → Every ~40 words: PRD-1 analyzes transcript
+    → If UPI ID found: PRD-2 checks payment risk
+    → Risk level mapped → Telegram alert sent
+    → If FRAUD: caller reported to PRD-2 entity registry
+    → Live events pushed to SOC Dashboard (PRD-3) via WebSocket
+```
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| Server | Fastify (Node.js 20) |
+| Layer | Technology |
+|-------|------------|
+| AI/NLP | Anthropic Claude (via PRD-1) |
+| Backend | Node.js, Express (PRD-2), Fastify (PRD-4) |
 | Database | Supabase (PostgreSQL) |
-| Telephony | Twilio (audio stream) |
-| Speech-to-text | Deepgram (nova-2, en-IN) |
-| Fraud analysis | PRD-1 AI Engine |
-| Risk scoring | PRD-2 Risk Orchestrator |
-| User alerts | Telegram Bot API |
+| Telephony | Twilio (audio streaming) |
+| Speech-to-Text | Deepgram (nova-2, en-IN) |
+| User Alerts | Telegram Bot API |
+| Real-time | WebSocket (ws/alerts, ws/calls) |
 | Containerization | Docker |
 
-## Project Structure
+## Contributing
 
-```
-├── src/
-│   ├── server.js          # Main Fastify server + orchestration
-│   ├── config.js          # Environment config with validation
-│   ├── db.js              # Supabase client
-│   ├── analyzer.js        # PRD-1 integration
-│   ├── risk-mapper.js     # Risk level → alert severity
-│   ├── telegram.js        # Telegram bot + enriched alerts
-│   ├── deepgram.js        # Deepgram streaming STT
-│   ├── call-manager.js    # Call lifecycle (Supabase)
-│   ├── user-store.js      # User registration (Supabase)
-│   └── ws-broadcaster.js  # WebSocket for PRD-3
-├── routes/
-│   ├── incoming-call.js   # Twilio webhook
-│   ├── calls.js           # Active + history APIs
-│   └── health.js          # Health check
-├── supabase/
-│   └── migrations/        # Database schema
-├── test/                  # Unit + integration tests
-├── Dockerfile
-├── docker-compose.yml
-└── package.json
-```
+Each service is independently deployable. Make changes within the appropriate directory and run that service's test suite before submitting a PR.
+
+## License
+
+Private — Project Vanguard
