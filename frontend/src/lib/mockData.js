@@ -183,7 +183,7 @@ export const systemHealthData = {
 
 // Navigation items mapping Stitch labels to routes
 export const navItems = [
-  { label: 'Live Monitoring', icon: 'radar', path: '/', filled: true },
+  { label: 'Live Monitoring', icon: 'radar', path: '/dashboard', filled: true },
   { label: 'Threat Hunt', icon: 'query_stats', path: '/fraud-shield', filled: false },
   { label: 'Takedown Lab', icon: 'security', path: '/action-center', filled: false },
   { label: 'Entity Intel', icon: 'fingerprint', path: '/policy-control', filled: false },

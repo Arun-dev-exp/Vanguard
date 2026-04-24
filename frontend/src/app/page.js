@@ -1,309 +1,274 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { campaigns, stats } from '@/lib/mockData';
-import { checkUPI, initiateTakedown } from '@/lib/mockApi';
-import { usePolling } from '@/hooks/usePolling';
-import { useNotifications } from '@/hooks/useNotifications';
-import NotificationToast from '@/components/shared/NotificationToast';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import './landing.css';
 
-export default function ThreatIntelPage() {
-  const [selectedCampaign, setSelectedCampaign] = useState(campaigns[0]);
-  const [upiInput, setUpiInput] = useState('fraudster@upi');
-  const [amountInput, setAmountInput] = useState('50,000');
-  const [riskResult, setRiskResult] = useState({ risk: 'HIGH', campaign: 'KYC Scam', reports: 1247, confidence: 0.98 });
-  const [isCheckingRisk, setIsCheckingRisk] = useState(false);
-  const [takedownState, setTakedownState] = useState('idle'); // idle | loading | done
-  const { notifications, addNotification, removeNotification } = useNotifications();
+const stats = [
+  { value: 4821, suffix: '+', label: 'Scams Detected', icon: 'bug_report' },
+  { value: 99.87, suffix: '%', label: 'System Uptime', icon: 'monitoring' },
+  { value: 12, suffix: 'ms', label: 'Avg Response', icon: 'speed' },
+  { value: 50, suffix: 'M+', label: 'Transactions Scanned', icon: 'swap_horiz' },
+];
 
-  const fetchStats = useCallback(() => Promise.resolve(stats), []);
-  const { data: liveStats, secondsAgo } = usePolling(fetchStats, 5000);
-  const currentStats = liveStats || stats;
+const features = [
+  { icon: 'radar', title: 'Live Threat Monitoring', desc: 'Real-time campaign detection powered by ML pattern matching across UPI, SMS, and phishing vectors.', color: '#adc6ff' },
+  { icon: 'shield', title: 'Fraud Shield Network', desc: 'Entity graph intelligence maps connections between fraudulent UPI IDs, URLs, and phone numbers.', color: '#ffb4ab' },
+  { icon: 'bolt', title: 'Instant Takedown', desc: 'One-click campaign neutralization. Block UPI endpoints and flag malicious URLs in under 30 seconds.', color: '#6cff82' },
+  { icon: 'fingerprint', title: 'Policy Engine', desc: 'Custom detection rules with auto-action triggers. Fine-tune thresholds for your risk tolerance.', color: '#FF9F0A' },
+  { icon: 'terminal', title: 'System Intelligence', desc: 'Full-stack observability. Monitor CPU, memory, network, and service health in real time.', color: '#c4b5fd' },
+  { icon: 'lock', title: 'Zero-Trust Architecture', desc: 'End-to-end encrypted operations with role-based access control and full audit logging.', color: '#67e8f9' },
+];
 
-  const handleCheckRisk = async () => {
-    if (!upiInput.trim()) return;
-    setIsCheckingRisk(true);
-    setRiskResult(null);
-    try {
-      const result = await checkUPI(upiInput.trim());
-      setRiskResult(result);
-    } catch {
-      setRiskResult({ risk: 'ERROR', campaign: null, reports: 0 });
-    }
-    setIsCheckingRisk(false);
-  };
+const timeline = [
+  { time: '0ms', event: 'Threat Signal Ingested', icon: 'cell_tower' },
+  { time: '12ms', event: 'ML Classification', icon: 'psychology' },
+  { time: '50ms', event: 'Entity Graph Updated', icon: 'hub' },
+  { time: '200ms', event: 'Alert Dispatched', icon: 'notifications_active' },
+  { time: '< 30s', event: 'Takedown Executed', icon: 'gavel' },
+];
 
-  const handleTakedown = async () => {
-    setTakedownState('loading');
-    try {
-      await initiateTakedown(selectedCampaign.id, 'all');
-      setTakedownState('done');
-      addNotification('✅ UPI blocked across network — Takedown initiated successfully', 'success');
-    } catch {
-      setTakedownState('idle');
-      addNotification('❌ Takedown failed — Please retry', 'error');
-    }
-  };
+function AnimatedCounter({ target, suffix, duration = 2000 }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
 
-  const handleCopyAll = () => {
-    const entities = selectedCampaign.entities;
-    const text = [
-      ...entities.urls.map(u => `URL: ${u}`),
-      ...entities.upiIds.map(u => `UPI: ${u}`),
-      ...entities.phones.map(p => `Phone: ${p}`),
-    ].join('\n');
-    navigator.clipboard.writeText(text);
-    addNotification('📋 All entities copied to clipboard', 'info');
-  };
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const startTime = performance.now();
+        const animate = (now) => {
+          const progress = Math.min((now - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setCount(Number((eased * target).toFixed(target % 1 !== 0 ? 2 : 0)));
+          if (progress < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+      }
+    }, { threshold: 0.3 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
+function ScrollReveal({ children, className = '', delay = 0 }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); observer.disconnect(); }
+    }, { threshold: 0.15 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <DashboardLayout>
-      <NotificationToast notifications={notifications} onRemove={removeNotification} />
+    <div ref={ref} className={`scroll-reveal ${visible ? 'revealed' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+}
 
-      {/* KPI Strip */}
-      <section className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div className="glass-panel glass-panel-hover rounded-lg p-6 border-t-2 border-t-primary shadow-lg hover:shadow-[0_0_15px_rgba(173,198,255,0.2)]">
-          <h3 className="text-label-caps text-on-surface-variant mb-2">TOTAL SCAMS DETECTED</h3>
-          <div className="text-data-display-lg text-primary">{currentStats.totalScams.toLocaleString()}</div>
-        </div>
-        <div className="glass-panel glass-panel-hover rounded-lg p-6 border-t-2 border-t-[#FF9F0A] shadow-lg">
-          <h3 className="text-label-caps text-on-surface-variant mb-2">ACTIVE CAMPAIGNS</h3>
-          <div className="text-data-display-lg text-on-surface">{currentStats.activeCampaigns}</div>
-        </div>
-        <div className="glass-panel glass-panel-hover rounded-lg p-6 border-t-2 border-t-error bg-error/5 shadow-lg shadow-error/10">
-          <h3 className="text-label-caps text-error mb-2">HIGH-RISK ALERTS</h3>
-          <div className="text-data-display-lg text-error drop-shadow-[0_0_5px_rgba(255,180,171,0.5)]">{currentStats.highRiskAlerts}</div>
-        </div>
-        <div className="glass-panel glass-panel-hover rounded-lg p-6 border-t-2 border-t-tertiary-fixed shadow-lg flex flex-col justify-between">
-          <h3 className="text-label-caps text-on-surface-variant mb-2">SYSTEM STATUS</h3>
-          <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full bg-tertiary-fixed animate-pulse shadow-[0_0_10px_rgba(108,255,130,1)]"></span>
-            <span className="text-data-display-md text-tertiary-fixed">LIVE</span>
+export default function LandingPage() {
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+    window.addEventListener('mousemove', handleMouse);
+    return () => window.removeEventListener('mousemove', handleMouse);
+  }, []);
+
+  return (
+    <div className="landing-root">
+      {/* Cursor glow */}
+      <div className="cursor-glow" style={{ left: mousePos.x - 200, top: mousePos.y - 200 }} />
+
+      {/* ===== HERO ===== */}
+      <section className="hero-section">
+        <div className="hero-grid" />
+        <div className="hero-orb hero-orb-1" />
+        <div className="hero-orb hero-orb-2" />
+        <div className="hero-orb hero-orb-3" />
+
+        {/* Floating particles */}
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={i} className="particle" style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`,
+            animationDuration: `${3 + Math.random() * 4}s`,
+          }} />
+        ))}
+
+        <nav className="hero-nav">
+          <div className="hero-nav-brand">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", color: '#adc6ff', fontSize: 28 }}>shield</span>
+            <span className="hero-nav-title">VANGUARD</span>
           </div>
+          <div className="hero-nav-links">
+            <a href="#features">Features</a>
+            <a href="#stats">Metrics</a>
+            <a href="#how-it-works">How It Works</a>
+            <Link href="/dashboard" className="hero-nav-cta">Enter Dashboard →</Link>
+          </div>
+        </nav>
+
+        <div className="hero-content">
+          <ScrollReveal>
+            <div className="hero-badge">
+              <span className="hero-badge-dot" />
+              <span>NEXT-GEN FRAUD INTELLIGENCE PLATFORM</span>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={100}>
+            <h1 className="hero-title">
+              <span className="hero-title-line">Defend Financial</span>
+              <span className="hero-title-line hero-title-gradient">Infrastructure</span>
+              <span className="hero-title-line">In Real Time</span>
+            </h1>
+          </ScrollReveal>
+
+          <ScrollReveal delay={200}>
+            <p className="hero-subtitle">
+              Vanguard SOC empowers security teams with AI-driven threat detection,
+              instant campaign takedowns, and full-stack fraud intelligence — protecting
+              millions of transactions across India's digital payment ecosystem.
+            </p>
+          </ScrollReveal>
+
+          <ScrollReveal delay={300}>
+            <div className="hero-actions">
+              <Link href="/dashboard" className="btn-primary">
+                <span className="material-symbols-outlined text-lg">rocket_launch</span>
+                Launch Dashboard
+              </Link>
+              <a href="#features" className="btn-ghost">
+                <span className="material-symbols-outlined text-lg">play_circle</span>
+                See How It Works
+              </a>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={400}>
+            <div className="hero-trust">
+              <span className="hero-trust-label">Trusted by</span>
+              <div className="hero-trust-logos">
+                <span className="hero-trust-item">🏦 RBI Compliant</span>
+                <span className="hero-trust-divider">|</span>
+                <span className="hero-trust-item">🔒 SOC 2 Type II</span>
+                <span className="hero-trust-divider">|</span>
+                <span className="hero-trust-item">⚡ ISO 27001</span>
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
-      {/* Last Updated */}
-      <div className="flex justify-end">
-        <span className="text-label-small text-on-surface-variant">
-          Last updated: {secondsAgo}s ago
-        </span>
-      </div>
-
-      {/* Main 3-Column Workspace */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
-        {/* Left: Campaign Sidebar */}
-        <div className="lg:col-span-3 glass-panel glass-panel-hover rounded-lg flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-white/10 bg-surface-container-highest/50">
-            <h2 className="text-label-caps text-on-surface">ACTIVE CAMPAIGNS</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {campaigns.map((campaign) => (
-              <div
-                key={campaign.id}
-                onClick={() => { setSelectedCampaign(campaign); setTakedownState('idle'); }}
-                className={`p-3 rounded-[0.25rem] cursor-pointer transition-all duration-200 ${
-                  selectedCampaign?.id === campaign.id
-                    ? `border ${campaign.borderColor} shadow-[0_0_15px_rgba(255,180,171,0.15)]`
-                    : 'border border-white/10 bg-surface-container-low hover:bg-surface-container'
-                }`}
-                style={selectedCampaign?.id === campaign.id ? { backgroundColor: campaign.bgColor } : undefined}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: campaign.dotColor }}></span>
-                    <span className={`text-body-main font-bold ${selectedCampaign?.id === campaign.id ? 'text-on-surface' : 'text-on-surface-variant'}`}>
-                      {campaign.name}
-                    </span>
-                  </div>
-                  <span
-                    className="text-label-small px-2 py-0.5 rounded-full"
-                    style={{
-                      color: campaign.threatColor,
-                      backgroundColor: `${campaign.threatColor}33`,
-                    }}
-                  >
-                    {campaign.threatLevel}
-                  </span>
+      {/* ===== STATS ===== */}
+      <section id="stats" className="stats-section">
+        <div className="stats-grid">
+          {stats.map((stat, i) => (
+            <ScrollReveal key={i} delay={i * 100}>
+              <div className="stat-card">
+                <span className="material-symbols-outlined stat-icon" style={{ fontVariationSettings: "'FILL' 1" }}>{stat.icon}</span>
+                <div className="stat-value">
+                  <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                 </div>
+                <div className="stat-label">{stat.label}</div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Center: Campaign Detail */}
-        <div className="lg:col-span-6 glass-panel glass-panel-hover rounded-lg flex flex-col overflow-hidden">
-          <div className="p-6 border-b border-white/10 bg-surface-container-highest/30 flex justify-between items-center">
-            <h2 className="text-data-display-md text-on-surface tracking-wide">{selectedCampaign.name.toUpperCase()}</h2>
-            <span
-              className="text-label-caps px-3 py-1 rounded-full shadow-[0_0_10px_rgba(255,180,171,0.2)]"
-              style={{
-                color: selectedCampaign.threatColor,
-                backgroundColor: `${selectedCampaign.threatColor}33`,
-                border: `1px solid ${selectedCampaign.threatColor}80`,
-              }}
-            >
-              {selectedCampaign.threatLevel}
-            </span>
-          </div>
-          <div className="p-6 flex-1 overflow-y-auto space-y-8">
-            {/* Intercepted Messages */}
-            <div>
-              <h3 className="text-label-caps text-on-surface-variant mb-4">INTERCEPTED MESSAGES</h3>
-              <div className="space-y-4">
-                {selectedCampaign.messages.map((msg, i) => (
-                  <div key={i} className="bg-[#05070A] border border-white/10 rounded-lg p-4 text-on-surface text-body-main">
-                    {msg}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Campaign Timeline */}
-            <div>
-              <h3 className="text-label-caps text-on-surface-variant mb-4">CAMPAIGN TIMELINE</h3>
-              <div className="relative border-l border-white/20 ml-3 space-y-6">
-                {selectedCampaign.timeline.map((item, i) => (
-                  <div key={i} className="relative pl-6">
-                    <span
-                      className={`absolute left-[-5px] top-1 w-2 h-2 rounded-full ${
-                        item.active ? 'bg-primary shadow-[0_0_5px_rgba(173,198,255,0.8)]' : 'bg-outline'
-                      }`}
-                    ></span>
-                    <div className="text-label-small text-on-surface-variant">{item.time}</div>
-                    <div className="text-body-main text-on-surface mt-1">{item.event}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Tools */}
-        <div className="lg:col-span-3 flex flex-col gap-5">
-          {/* Entities & Takedown */}
-          <div className="glass-panel glass-panel-hover rounded-lg p-6 flex-1 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-label-caps text-on-surface">EXTRACTED ENTITIES</h3>
-              <button onClick={handleCopyAll} className="text-primary hover:text-primary-fixed transition-colors" title="Copy All">
-                <span className="material-symbols-outlined text-[18px]">content_copy</span>
-              </button>
-            </div>
-            <div className="space-y-4 mb-6 flex-1">
-              <div>
-                <span className="text-label-small text-on-surface-variant block mb-2">URLs</span>
-                {selectedCampaign.entities.urls.map((url, i) => (
-                  <div key={i} className="inline-flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-full px-3 py-1 text-body-main text-on-surface hover:bg-surface-container transition-colors mr-2 mb-2">
-                    <span className="material-symbols-outlined text-[14px] text-primary">link</span>
-                    {url}
-                  </div>
-                ))}
-              </div>
-              <div>
-                <span className="text-label-small text-on-surface-variant block mb-2">UPI IDs</span>
-                {selectedCampaign.entities.upiIds.map((upi, i) => (
-                  <div key={i} className="inline-flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-full px-3 py-1 text-body-main text-on-surface hover:bg-surface-container transition-colors mr-2 mb-2">
-                    <span className="material-symbols-outlined text-[14px] text-primary">account_balance_wallet</span>
-                    {upi}
-                  </div>
-                ))}
-              </div>
-              <div>
-                <span className="text-label-small text-on-surface-variant block mb-2">PHONES</span>
-                <div className="flex flex-wrap gap-2">
-                  {selectedCampaign.entities.phones.map((phone, i) => (
-                    <div key={i} className="inline-flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-full px-3 py-1 text-body-main text-on-surface hover:bg-surface-container transition-colors">
-                      <span className="material-symbols-outlined text-[14px] text-primary">call</span>
-                      {phone}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={handleTakedown}
-              disabled={takedownState === 'loading'}
-              className={`w-full mt-auto py-3 rounded-lg font-bold tracking-wide flex justify-center items-center gap-2 transition-all duration-300 ${
-                takedownState === 'done'
-                  ? 'bg-tertiary-container text-white shadow-[0_0_20px_rgba(71,226,102,0.4)]'
-                  : takedownState === 'loading'
-                  ? 'bg-gradient-to-r from-error/50 to-secondary-container/50 text-white/70 cursor-wait'
-                  : 'bg-gradient-to-r from-error to-secondary-container text-white shadow-[0_0_20px_rgba(255,180,171,0.4)] hover:shadow-[0_0_30px_rgba(255,180,171,0.6)] hover:scale-[1.02]'
-              }`}
-            >
-              <span className="material-symbols-outlined">
-                {takedownState === 'done' ? 'check_circle' : takedownState === 'loading' ? 'hourglass_top' : 'block'}
-              </span>
-              {takedownState === 'done' ? 'TAKEDOWN INITIATED' : takedownState === 'loading' ? 'PROCESSING...' : 'INITIATE TAKEDOWN'}
-            </button>
-          </div>
-
-          {/* Risk Check */}
-          <div className="glass-panel glass-panel-hover rounded-lg p-6">
-            <h3 className="text-label-caps text-on-surface mb-4">TRANSACTION RISK CHECK</h3>
-            <div className="space-y-4">
-              <input
-                className="w-full bg-[#05070A] border border-white/10 rounded-[0.25rem] px-4 py-2 text-body-main text-on-surface focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(173,198,255,0.2)] transition-all placeholder:text-on-surface-variant/50"
-                placeholder="Enter UPI ID / Acct"
-                type="text"
-                value={upiInput}
-                onChange={(e) => setUpiInput(e.target.value)}
-              />
-              <input
-                className="w-full bg-[#05070A] border border-white/10 rounded-[0.25rem] px-4 py-2 text-body-main text-on-surface focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(173,198,255,0.2)] transition-all placeholder:text-on-surface-variant/50"
-                placeholder="Amount (INR)"
-                type="text"
-                value={amountInput}
-                onChange={(e) => setAmountInput(e.target.value)}
-              />
-              <button
-                onClick={handleCheckRisk}
-                disabled={isCheckingRisk}
-                className="w-full border border-primary text-primary hover:bg-primary/10 py-2 rounded-[0.25rem] font-bold transition-all duration-300 flex justify-center items-center gap-2"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  {isCheckingRisk ? 'hourglass_top' : 'search'}
-                </span>
-                {isCheckingRisk ? 'CHECKING...' : 'CHECK RISK'}
-              </button>
-
-              {/* Risk Result */}
-              {riskResult && (
-                <div
-                  className={`mt-4 border rounded-[0.25rem] p-4 flex items-start gap-3 ${
-                    riskResult.risk === 'HIGH'
-                      ? 'bg-error/10 border-error shadow-[0_0_15px_rgba(255,180,171,0.15)]'
-                      : riskResult.risk === 'MEDIUM'
-                      ? 'bg-[#FF9F0A]/10 border-[#FF9F0A]'
-                      : 'bg-tertiary-fixed/10 border-tertiary-fixed shadow-[0_0_15px_rgba(71,226,102,0.15)]'
-                  }`}
-                >
-                  <span className={`material-symbols-outlined mt-0.5 ${
-                    riskResult.risk === 'HIGH' ? 'text-error' : riskResult.risk === 'MEDIUM' ? 'text-[#FF9F0A]' : 'text-tertiary-fixed'
-                  }`}>
-                    {riskResult.risk === 'HIGH' || riskResult.risk === 'MEDIUM' ? 'warning' : 'check_circle'}
-                  </span>
-                  <div>
-                    <div className={`font-bold text-body-main ${
-                      riskResult.risk === 'HIGH' ? 'text-error' : riskResult.risk === 'MEDIUM' ? 'text-[#FF9F0A]' : 'text-tertiary-fixed'
-                    }`}>
-                      {riskResult.risk === 'HIGH' ? 'HIGH RISK DETECTED' : riskResult.risk === 'MEDIUM' ? 'MEDIUM RISK' : 'LOW RISK — SAFE'}
-                    </div>
-                    <div className={`text-label-small mt-1 ${
-                      riskResult.risk === 'HIGH' ? 'text-error-container' : riskResult.risk === 'MEDIUM' ? 'text-[#FF9F0A]/70' : 'text-tertiary-fixed-dim'
-                    }`}>
-                      {riskResult.risk === 'LOW'
-                        ? 'Entity not found in any known scam campaigns. Transaction appears safe.'
-                        : `Entity flagged in ${riskResult.reports} recent scam campaigns. Recommended action: Block immediately.`}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+            </ScrollReveal>
+          ))}
         </div>
       </section>
-    </DashboardLayout>
+
+      {/* ===== FEATURES ===== */}
+      <section id="features" className="features-section">
+        <ScrollReveal>
+          <div className="section-header">
+            <span className="section-badge">CAPABILITIES</span>
+            <h2 className="section-title">Everything You Need to<br /><span className="text-gradient">Fight Financial Fraud</span></h2>
+            <p className="section-desc">Six integrated modules working together to detect, analyze, and neutralize fraud campaigns before they cause damage.</p>
+          </div>
+        </ScrollReveal>
+
+        <div className="features-grid">
+          {features.map((f, i) => (
+            <ScrollReveal key={i} delay={i * 80}>
+              <div className="feature-card" style={{ '--accent': f.color }}>
+                <div className="feature-icon-wrap">
+                  <span className="material-symbols-outlined feature-icon" style={{ fontVariationSettings: "'FILL' 1" }}>{f.icon}</span>
+                </div>
+                <h3 className="feature-title">{f.title}</h3>
+                <p className="feature-desc">{f.desc}</p>
+                <div className="feature-shine" />
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== HOW IT WORKS ===== */}
+      <section id="how-it-works" className="how-section">
+        <ScrollReveal>
+          <div className="section-header">
+            <span className="section-badge">RESPONSE PIPELINE</span>
+            <h2 className="section-title">From Signal to<br /><span className="text-gradient">Takedown in Seconds</span></h2>
+          </div>
+        </ScrollReveal>
+
+        <div className="timeline-container">
+          {timeline.map((item, i) => (
+            <ScrollReveal key={i} delay={i * 120}>
+              <div className="timeline-step">
+                <div className="timeline-dot">
+                  <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>{item.icon}</span>
+                </div>
+                {i < timeline.length - 1 && <div className="timeline-line" />}
+                <div className="timeline-time">{item.time}</div>
+                <div className="timeline-event">{item.event}</div>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== CTA ===== */}
+      <section className="cta-section">
+        <div className="cta-glow" />
+        <ScrollReveal>
+          <div className="cta-content">
+            <h2 className="cta-title">Ready to Secure Your<br /><span className="text-gradient">Payment Ecosystem?</span></h2>
+            <p className="cta-desc">Deploy Vanguard SOC and start detecting fraud in minutes. No setup complexity. Enterprise-grade from day one.</p>
+            <div className="hero-actions" style={{ justifyContent: 'center' }}>
+              <Link href="/dashboard" className="btn-primary btn-lg">
+                <span className="material-symbols-outlined">shield</span>
+                Enter Command Center
+              </Link>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* ===== FOOTER ===== */}
+      <footer className="landing-footer">
+        <div className="footer-inner">
+          <div className="footer-brand">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", color: '#adc6ff' }}>shield</span>
+            <span>VANGUARD SOC</span>
+          </div>
+          <div className="footer-copy">© 2026 Vanguard Security Operations. All rights reserved.</div>
+          <div className="footer-links">
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+            <a href="#">Security</a>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
