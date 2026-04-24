@@ -4,10 +4,13 @@ import '../data/mock_data.dart';
 import '../widgets/components.dart';
 import '../services/supabase_service.dart';
 import '../widgets/scam_alert_dialog.dart';
+import '../services/qr_analyzer_service.dart';
+import '../widgets/payment_intent_warning.dart';
 
 class SendMoneyScreen extends StatefulWidget {
   final Contact? prefill;
-  const SendMoneyScreen({super.key, this.prefill});
+  final QRAnalysisResult? analysis;
+  const SendMoneyScreen({super.key, this.prefill, this.analysis});
 
   @override
   State<SendMoneyScreen> createState() => _SendMoneyScreenState();
@@ -67,6 +70,9 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            if (widget.analysis != null)
+              PaymentIntentWarning(analysis: widget.analysis!),
+            
             // Recipient
             if (contact != null) ...[
               PayWidgets.avatar(contact.initials, contact.color, size: 64),

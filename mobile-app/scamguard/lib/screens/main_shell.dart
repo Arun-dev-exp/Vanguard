@@ -4,6 +4,7 @@ import 'home_screen.dart';
 import 'history_screen.dart';
 import 'scan_screen.dart';
 import 'profile_screen.dart';
+import '../services/sms_monitor_service.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -13,6 +14,13 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _idx = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize SMS monitoring as soon as the main shell loads
+    SmsMonitorService.initialize(context);
+  }
 
   final _screens = const [
     HomeScreen(),

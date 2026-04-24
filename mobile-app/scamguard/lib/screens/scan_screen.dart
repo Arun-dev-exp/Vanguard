@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../theme/sentinel_theme.dart';
 import '../services/supabase_service.dart';
+import '../services/qr_analyzer_service.dart';
 import '../widgets/scam_alert_dialog.dart';
 import '../data/mock_data.dart';
 import 'send_money_screen.dart';
@@ -164,24 +165,13 @@ class _ScanScreenState extends State<ScanScreen> {
   Future<void> _processQRCode(String rawValue) async {
     setState(() => _isProcessing = true);
     
-    // Attempt to parse UPI URI: upi://pay?pa=some@upi&pn=Name...
-    String upiId = rawValue;
-    String name = 'Unknown';
-    if (rawValue.toLowerCase().startsWith('upi://')) {
-      final uri = Uri.tryParse(rawValue);
-      if (uri != null && uri.queryParameters.containsKey('pa')) {
-        upiId = uri.queryParameters['pa']!;
-        name = uri.queryParameters['pn'] ?? upiId.split('@').first;
-      }
-    }
-
-    // Check if it's a scam
-    final isScam = await SupabaseService.isUpiScam(upiId);
+    // Analyze QR intent
+    final analysis = await QRAnalyzerService.analyze(rawValue);
     
     if (!mounted) return;
 
-    if (isScam) {
-      final proceed = await ScamAlertDialog.show(context, upiId);
+    if (analysis.riskLevel == RiskLevel.HIGH) {
+      final proceed = await ScamAlertDialog.show(context, analysis.upiId);
       if (!proceed) {
         // User cancelled, reset scanner
         setState(() => _isProcessing = false);
@@ -190,10 +180,10 @@ class _ScanScreenState extends State<ScanScreen> {
     }
 
     // Proceed to SendMoneyScreen
-    final contact = Contact(name: name, phone: upiId, initials: name.isNotEmpty ? name[0] : 'U', color: 0); // Create a mock contact
+    final contact = Contact(name: analysis.name, phone: analysis.upiId, initials: analysis.name.isNotEmpty ? analysis.name[0] : 'U', color: 0); // Create a mock contact
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => SendMoneyScreen(prefill: contact)),
+      MaterialPageRoute(builder: (_) => SendMoneyScreen(prefill: contact, analysis: analysis)),
     ).then((_) {
       if (mounted) setState(() => _isProcessing = false);
     });
