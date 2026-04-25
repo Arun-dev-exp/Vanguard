@@ -5,11 +5,18 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { actionCenterData } from '@/lib/mockData';
 import { useNotifications } from '@/hooks/useNotifications';
 import NotificationToast from '@/components/shared/NotificationToast';
+import { useTheme } from '@/context/ThemeContext';
 
-const sevStyles = {
+const sevStylesDark = {
   CRITICAL: { bg: 'bg-error/10', border: 'border-error', text: 'text-error', dot: 'bg-error', glow: 'shadow-[0_0_15px_rgba(255,180,171,0.15)]' },
   HIGH: { bg: 'bg-[#FF9F0A]/10', border: 'border-[#FF9F0A]', text: 'text-[#FF9F0A]', dot: 'bg-[#FF9F0A]', glow: '' },
   MEDIUM: { bg: 'bg-[#FFD60A]/10', border: 'border-[#FFD60A]', text: 'text-[#FFD60A]', dot: 'bg-[#FFD60A]', glow: '' },
+};
+
+const sevStylesLight = {
+  CRITICAL: { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-600', dot: 'bg-red-500', glow: 'shadow-md' },
+  HIGH: { bg: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-600', dot: 'bg-amber-500', glow: '' },
+  MEDIUM: { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-600', dot: 'bg-yellow-500', glow: '' },
 };
 
 const stStyles = {
@@ -17,10 +24,20 @@ const stStyles = {
   'in-progress': { bg: 'bg-primary/10', text: 'text-primary', icon: 'hourglass_top' },
 };
 
+const stStylesLight = {
+  completed: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'check_circle' },
+  'in-progress': { bg: 'bg-blue-50', text: 'text-blue-600', icon: 'hourglass_top' },
+};
+
 export default function ActionCenterPage() {
   const { notifications, addNotification, removeNotification } = useNotifications();
   const [actions, setActions] = useState({});
   const { activeThreats, responseTimeline } = actionCenterData;
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const sevStyles = isDark ? sevStylesDark : sevStylesLight;
+  const statusStyles = isDark ? stStyles : stStylesLight;
 
   const doAction = async (tid, act) => {
     setActions(p => ({ ...p, [`${tid}-${act}`]: 'loading' }));
@@ -46,15 +63,15 @@ export default function ActionCenterPage() {
       </div>
 
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
-        <div className="lg:col-span-7 glass-panel glass-panel-hover rounded-lg flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-white/10 bg-surface-container-highest/30">
+        <div className="lg:col-span-7 glass-panel glass-panel-hover rounded-2xl flex flex-col overflow-hidden">
+          <div className={`p-4 border-b ${isDark ? 'border-white/10 bg-surface-container-highest/30' : 'border-slate-100 bg-slate-50/40'}`}>
             <h3 className="text-label-caps text-on-surface">ACTIVE THREATS</h3>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {activeThreats.map(t => {
               const s = sevStyles[t.severity] || sevStyles.MEDIUM;
               return (
-                <div key={t.id} className={`p-4 rounded-lg border ${s.border} ${s.bg} ${s.glow}`}>
+                <div key={t.id} className={`p-4 rounded-2xl border ${s.border} ${s.bg} ${s.glow}`}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <span className={`w-2.5 h-2.5 rounded-full ${s.dot} ${t.severity === 'CRITICAL' ? 'animate-pulse' : ''}`}></span>
@@ -69,15 +86,15 @@ export default function ActionCenterPage() {
                   </div>
                   <div className="flex gap-3">
                     <button onClick={() => doAction(t.id, 'takedown')} disabled={gs(t.id, 'takedown') !== 'idle'}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-[0.25rem] font-bold text-xs transition-all ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
                         gs(t.id, 'takedown') === 'done' ? 'bg-tertiary-container text-white' :
                         gs(t.id, 'takedown') === 'loading' ? 'bg-error/30 text-white/60 cursor-wait' :
-                        'bg-gradient-to-r from-error to-secondary-container text-white hover:shadow-[0_0_15px_rgba(255,180,171,0.4)]'}`}>
+                        `bg-gradient-to-r from-error to-secondary-container text-white ${isDark ? 'hover:shadow-[0_0_15px_rgba(255,180,171,0.4)]' : 'hover:shadow-md'}`}`}>
                       <span className="material-symbols-outlined text-[16px]">{gs(t.id, 'takedown') === 'done' ? 'check_circle' : 'block'}</span>
                       {gs(t.id, 'takedown') === 'done' ? 'TAKEN DOWN' : gs(t.id, 'takedown') === 'loading' ? 'PROCESSING...' : 'TAKEDOWN'}
                     </button>
                     <button onClick={() => doAction(t.id, 'block-upi')} disabled={gs(t.id, 'block-upi') !== 'idle'}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-[0.25rem] font-bold text-xs transition-all ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
                         gs(t.id, 'block-upi') === 'done' ? 'bg-tertiary-container text-white' :
                         gs(t.id, 'block-upi') === 'loading' ? 'border border-primary/30 text-primary/60 cursor-wait' :
                         'border border-primary text-primary hover:bg-primary/10'}`}>
@@ -91,14 +108,14 @@ export default function ActionCenterPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-5 glass-panel glass-panel-hover rounded-lg flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-white/10 bg-surface-container-highest/30">
+        <div className="lg:col-span-5 glass-panel glass-panel-hover rounded-2xl flex flex-col overflow-hidden">
+          <div className={`p-4 border-b ${isDark ? 'border-white/10 bg-surface-container-highest/30' : 'border-slate-100 bg-slate-50/40'}`}>
             <h3 className="text-label-caps text-on-surface">RESPONSE TIMELINE</h3>
           </div>
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="relative border-l border-white/20 ml-3 space-y-6">
+            <div className={`relative border-l ml-3 space-y-6 ${isDark ? 'border-white/20' : 'border-slate-300'}`}>
               {responseTimeline.map((item, i) => {
-                const st = stStyles[item.status] || stStyles.completed;
+                const st = statusStyles[item.status] || statusStyles.completed;
                 return (
                   <div key={i} className="relative pl-6">
                     <span className={`absolute left-[-6px] top-1 w-3 h-3 rounded-full ${item.status === 'completed' ? 'bg-tertiary-fixed' : 'bg-primary animate-pulse'}`}></span>

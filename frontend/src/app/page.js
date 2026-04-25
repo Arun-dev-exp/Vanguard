@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useTheme } from '@/context/ThemeContext';
 import './landing.css';
 
 /* ======= DATA ======= */
@@ -79,7 +80,8 @@ function ParticleCanvas() {
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(173, 198, 255, ${this.opacity})`;
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        ctx.fillStyle = isDark ? `rgba(173, 198, 255, ${this.opacity})` : `rgba(44, 95, 204, ${this.opacity * 0.6})`;
         ctx.fill();
       }
     }
@@ -100,7 +102,8 @@ function ParticleCanvas() {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(173, 198, 255, ${0.06 * (1 - dist / maxDist)})`;
+            const isDarkLine = document.documentElement.getAttribute('data-theme') === 'dark';
+            ctx.strokeStyle = isDarkLine ? `rgba(173, 198, 255, ${0.06 * (1 - dist / maxDist)})` : `rgba(44, 95, 204, ${0.04 * (1 - dist / maxDist)})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
@@ -258,6 +261,8 @@ function FeatureCard({ feature, index }) {
 function StickyNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -270,7 +275,7 @@ function StickyNav() {
       <div className="nav-inner">
         <Link href="/" className="nav-brand">
           <div className="nav-logo-icon">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", color: '#adc6ff', fontSize: 22 }}>shield</span>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", color: isDark ? '#adc6ff' : '#2c5fcc', fontSize: 22 }}>shield</span>
           </div>
           <span className="nav-logo-text">VANGUARD</span>
         </Link>
@@ -280,6 +285,11 @@ function StickyNav() {
           <a href="#stats" onClick={() => setMobileOpen(false)}>Metrics</a>
           <a href="#how-it-works" onClick={() => setMobileOpen(false)}>How It Works</a>
           <a href="#security" onClick={() => setMobileOpen(false)}>Security</a>
+          <button onClick={toggleTheme} className="theme-toggle-btn" title={isDark ? 'Switch to light mode' : 'Switch to dark mode'} aria-label="Toggle theme">
+            <span className="material-symbols-outlined animate-theme-spin" key={theme} style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}>
+              {isDark ? 'light_mode' : 'dark_mode'}
+            </span>
+          </button>
           <Link href="/dashboard" className="nav-cta" onClick={() => setMobileOpen(false)}>
             Enter Dashboard
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>

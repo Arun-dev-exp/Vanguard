@@ -3,12 +3,20 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { fraudShieldData } from '@/lib/mockData';
+import { useTheme } from '@/context/ThemeContext';
 
 const riskColorMap = {
   critical: { bg: 'bg-error/20', border: 'border-error', text: 'text-error', glow: 'shadow-[0_0_15px_rgba(255,180,171,0.3)]', dot: 'bg-error' },
   high: { bg: 'bg-[#FF9F0A]/20', border: 'border-[#FF9F0A]', text: 'text-[#FF9F0A]', glow: 'shadow-[0_0_15px_rgba(255,159,10,0.3)]', dot: 'bg-[#FF9F0A]' },
   medium: { bg: 'bg-[#FFD60A]/20', border: 'border-[#FFD60A]', text: 'text-[#FFD60A]', glow: 'shadow-[0_0_15px_rgba(255,214,10,0.3)]', dot: 'bg-[#FFD60A]' },
   low: { bg: 'bg-tertiary-fixed/20', border: 'border-tertiary-fixed', text: 'text-tertiary-fixed', glow: '', dot: 'bg-tertiary-fixed' },
+};
+
+const riskColorMapLight = {
+  critical: { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-600', glow: 'shadow-md', dot: 'bg-red-500' },
+  high: { bg: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-600', glow: 'shadow-md', dot: 'bg-amber-500' },
+  medium: { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-600', glow: '', dot: 'bg-yellow-500' },
+  low: { bg: 'bg-emerald-50', border: 'border-emerald-300', text: 'text-emerald-600', glow: '', dot: 'bg-emerald-500' },
 };
 
 const typeIconMap = {
@@ -24,9 +32,21 @@ const severityConfig = {
   success: { bg: 'bg-tertiary-fixed/10', text: 'text-tertiary-fixed', icon: 'check_circle' },
 };
 
+const severityConfigLight = {
+  critical: { bg: 'bg-red-50', text: 'text-red-600', icon: 'error' },
+  high: { bg: 'bg-amber-50', text: 'text-amber-600', icon: 'warning' },
+  info: { bg: 'bg-blue-50', text: 'text-blue-600', icon: 'info' },
+  success: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'check_circle' },
+};
+
 export default function FraudShieldPage() {
   const [selectedNode, setSelectedNode] = useState(null);
   const { networkNodes, activityFeed } = fraudShieldData;
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const colorMap = isDark ? riskColorMap : riskColorMapLight;
+  const sevMap = isDark ? severityConfig : severityConfigLight;
 
   return (
     <DashboardLayout>
@@ -44,8 +64,8 @@ export default function FraudShieldPage() {
 
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
         {/* Network Visualization */}
-        <div className="lg:col-span-8 glass-panel glass-panel-hover rounded-lg flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-white/10 bg-surface-container-highest/30 flex justify-between items-center">
+        <div className="lg:col-span-8 glass-panel glass-panel-hover rounded-2xl flex flex-col overflow-hidden">
+          <div className={`p-4 border-b flex justify-between items-center section-header`}>
             <h3 className="text-label-caps text-on-surface">ENTITY NETWORK GRAPH</h3>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -53,11 +73,11 @@ export default function FraudShieldPage() {
                 <span className="text-label-small text-on-surface-variant">Critical</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#FF9F0A]"></span>
+                <span className={`w-2 h-2 rounded-full ${isDark ? 'bg-[#FF9F0A]' : 'bg-amber-500'}`}></span>
                 <span className="text-label-small text-on-surface-variant">High</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#FFD60A]"></span>
+                <span className={`w-2 h-2 rounded-full ${isDark ? 'bg-[#FFD60A]' : 'bg-yellow-500'}`}></span>
                 <span className="text-label-small text-on-surface-variant">Medium</span>
               </div>
             </div>
@@ -78,7 +98,7 @@ export default function FraudShieldPage() {
                       y1={node.y}
                       x2={target.x}
                       y2={target.y}
-                      stroke="rgba(173, 198, 255, 0.15)"
+                      stroke={isDark ? "rgba(173, 198, 255, 0.15)" : "rgba(44, 95, 204, 0.15)"}
                       strokeWidth="0.3"
                       strokeDasharray="1,1"
                     />
@@ -87,8 +107,8 @@ export default function FraudShieldPage() {
               )}
               {/* Nodes */}
               {networkNodes.map((node) => {
-                const colors = riskColorMap[node.risk];
                 const isSelected = selectedNode?.id === node.id;
+                const nodeColor = node.risk === 'critical' ? (isDark ? '#ffb4ab' : '#ef4444') : node.risk === 'high' ? (isDark ? '#FF9F0A' : '#f59e0b') : (isDark ? '#FFD60A' : '#eab308');
                 return (
                   <g key={node.id} onClick={() => setSelectedNode(node)} className="cursor-pointer">
                     {/* Glow ring */}
@@ -97,7 +117,7 @@ export default function FraudShieldPage() {
                       cy={node.y}
                       r={isSelected ? 4 : 3}
                       fill="none"
-                      stroke={node.risk === 'critical' ? '#ffb4ab' : node.risk === 'high' ? '#FF9F0A' : '#FFD60A'}
+                      stroke={nodeColor}
                       strokeWidth="0.3"
                       opacity={isSelected ? 0.8 : 0.3}
                     />
@@ -106,7 +126,7 @@ export default function FraudShieldPage() {
                       cx={node.x}
                       cy={node.y}
                       r={isSelected ? 2.5 : 1.8}
-                      fill={node.risk === 'critical' ? '#ffb4ab' : node.risk === 'high' ? '#FF9F0A' : '#FFD60A'}
+                      fill={nodeColor}
                       opacity={0.9}
                     />
                     {/* Label */}
@@ -114,7 +134,7 @@ export default function FraudShieldPage() {
                       x={node.x}
                       y={node.y + 5}
                       textAnchor="middle"
-                      fill="#c2c6d6"
+                      fill={isDark ? "#c2c6d6" : "#5a5e72"}
                       fontSize="2.2"
                       fontFamily="Inter"
                     >
@@ -130,21 +150,23 @@ export default function FraudShieldPage() {
         {/* Right Panel: Entity List + Activity */}
         <div className="lg:col-span-4 flex flex-col gap-5">
           {/* Entity Risk List */}
-          <div className="glass-panel glass-panel-hover rounded-lg flex flex-col overflow-hidden flex-1">
-            <div className="p-4 border-b border-white/10 bg-surface-container-highest/30">
+          <div className="glass-panel glass-panel-hover rounded-2xl flex flex-col overflow-hidden flex-1">
+            <div className={`p-4 border-b ${isDark ? '' : ''}`}>
               <h3 className="text-label-caps text-on-surface">FLAGGED ENTITIES</h3>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {networkNodes.map((node) => {
-                const colors = riskColorMap[node.risk];
+                const colors = colorMap[node.risk];
                 return (
                   <div
                     key={node.id}
                     onClick={() => setSelectedNode(node)}
-                    className={`p-3 rounded-[0.25rem] border cursor-pointer transition-all duration-200 ${
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                       selectedNode?.id === node.id
                         ? `${colors.bg} ${colors.border} ${colors.glow}`
-                        : 'border-white/10 bg-surface-container-low hover:bg-surface-container'
+                        : isDark
+                          ? 'border-white/10 bg-surface-container-low hover:bg-surface-container'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -165,16 +187,16 @@ export default function FraudShieldPage() {
           </div>
 
           {/* Activity Feed */}
-          <div className="glass-panel glass-panel-hover rounded-lg flex flex-col overflow-hidden max-h-[350px]">
-            <div className="p-4 border-b border-white/10 bg-surface-container-highest/30 flex justify-between items-center">
+          <div className="glass-panel glass-panel-hover rounded-2xl flex flex-col overflow-hidden max-h-[350px]">
+            <div className={`p-4 border-b flex justify-between items-center section-header`}>
               <h3 className="text-label-caps text-on-surface">ACTIVITY FEED</h3>
-              <span className="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse shadow-[0_0_6px_rgba(108,255,130,0.8)]"></span>
+              <span className="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse" style={{ boxShadow: '0 0 6px rgba(108,255,130,0.8)' }}></span>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {activityFeed.map((item) => {
-                const sev = severityConfig[item.severity] || severityConfig.info;
+                const sev = sevMap[item.severity] || sevMap.info;
                 return (
-                  <div key={item.id} className={`p-3 rounded-[0.25rem] ${sev.bg} border border-white/5`}>
+                  <div key={item.id} className={`p-3 rounded-lg ${sev.bg} border ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`material-symbols-outlined text-[14px] ${sev.text}`}>{sev.icon}</span>
                       <span className="text-label-small text-on-surface-variant">{item.time}</span>

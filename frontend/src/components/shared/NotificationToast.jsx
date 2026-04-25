@@ -1,18 +1,31 @@
 'use client';
 
+import { useTheme } from '@/context/ThemeContext';
+
 export default function NotificationToast({ notifications, onRemove }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   if (!notifications || notifications.length === 0) return null;
 
   const getTypeStyles = (type) => {
     switch (type) {
       case 'success':
-        return 'border-[#47e266] bg-[#47e266]/10 text-[#6cff82]';
+        return isDark
+          ? 'border-[#47e266] bg-[#47e266]/10 text-[#6cff82]'
+          : 'border-emerald-400 bg-emerald-50 text-emerald-700';
       case 'error':
-        return 'border-[#ffb4ab] bg-[#ffb4ab]/10 text-[#ffb4ab]';
+        return isDark
+          ? 'border-[#ffb4ab] bg-[#ffb4ab]/10 text-[#ffb4ab]'
+          : 'border-red-400 bg-red-50 text-red-700';
       case 'warning':
-        return 'border-[#FF9F0A] bg-[#FF9F0A]/10 text-[#FF9F0A]';
+        return isDark
+          ? 'border-[#FF9F0A] bg-[#FF9F0A]/10 text-[#FF9F0A]'
+          : 'border-amber-400 bg-amber-50 text-amber-700';
       default:
-        return 'border-[#adc6ff] bg-[#adc6ff]/10 text-[#adc6ff]';
+        return isDark
+          ? 'border-[#adc6ff] bg-[#adc6ff]/10 text-[#adc6ff]'
+          : 'border-blue-400 bg-blue-50 text-blue-700';
     }
   };
 
@@ -38,7 +51,7 @@ export default function NotificationToast({ notifications, onRemove }) {
           <div className="flex-1 text-sm font-medium">{notif.message}</div>
           <button
             onClick={() => onRemove(notif.id)}
-            className="text-white/40 hover:text-white/80 transition-colors"
+            className={`transition-colors ${isDark ? 'text-white/40 hover:text-white/80' : 'text-slate-400 hover:text-slate-600'}`}
           >
             <span className="material-symbols-outlined text-[16px]">close</span>
           </button>
