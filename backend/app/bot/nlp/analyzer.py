@@ -10,11 +10,13 @@ from .language_detector import detect_language
 from .translator import translate_to_english, translate_from_english
 from .entity_extractor import extract_entities
 from .fraud_classifier import classify_fraud
+from .link_analyzer import analyze_link
+import asyncio
 
 logger = get_logger("vanguard_bot.nlp.analyzer")
 
 
-def analyze_message(text: str, user_lang: str | None = None) -> dict:
+async def analyze_message(text: str, user_lang: str | None = None) -> dict:
     """Run the full NLP fraud analysis pipeline.
 
     1. Detect language of input
@@ -49,8 +51,27 @@ def analyze_message(text: str, user_lang: str | None = None) -> dict:
     else:
         entities = entities_orig
 
+    # ── Step 3.5: Deception Decoder (Link Analysis) ────────────
+    link_results = []
+    if entities.get("urls"):
+        tasks = [analyze_link(url) for url in entities["urls"]]
+        link_results = await asyncio.gather(*tasks)
+
     # ── Step 4: Classify fraud on ENGLISH text ONLY ────────────
     classification = classify_fraud(english_text, entities)
+
+    # ── Step 4.5: Merge Link Analysis Results ──────────────────
+    for lr in link_results:
+        if lr["is_scam"]:
+            classification["is_scam"] = True
+            classification["confidence"] = max(90, classification["confidence"])
+            classification["scam_type"] = "Malicious Link / Phishing"
+        
+        if lr["reasons"]:
+            # Keep unique reasons
+            for r in lr["reasons"]:
+                if r not in classification["reasons"]:
+                    classification["reasons"].append(r)
 
     # ── Step 5: Build English explanation ──────────────────────
     explanation_en = _build_explanation(classification, entities)
@@ -111,7 +132,7 @@ def _build_explanation(classification: dict, entities: dict) -> str:
     else:
         parts.append(f"LOW RISK: This message has some suspicious indicators.")
 
-    for reason in classification.get("reasons", [])[:4]:
+    for reason in classification.get("reasons", [])[:6]:
         parts.append(f"- {reason}")
 
     parts.append("Do NOT click links, share OTPs, or transfer money to unknown accounts.")

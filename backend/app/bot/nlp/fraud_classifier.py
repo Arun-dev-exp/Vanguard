@@ -13,6 +13,7 @@ import os
 import re
 from pathlib import Path
 from ..config import get_logger
+from .social_media_scanner import search_for_scam
 
 logger = get_logger("vanguard_bot.nlp.classifier")
 
@@ -187,8 +188,13 @@ def classify_fraud(text: str, entities: dict | None = None) -> dict:
     feat = _classify_features(features, text)
     pkl = _classify_pkl(features)
 
+    # Social Media check (if no UPI)
+    sm_result = None
+    if not entities.get("upi_ids"):
+        sm_result = search_for_scam(text, entities)
+
     # Ensemble vote
-    return _ensemble(zs, feat, pkl, text, entities)
+    return _ensemble(zs, feat, pkl, sm_result, text, entities)
 
 
 def _classify_zero_shot(text: str) -> dict | None:
@@ -292,11 +298,30 @@ def _classify_pkl(features: dict) -> dict | None:
         return None
 
 
-def _ensemble(zs: dict | None, feat: dict, pkl: dict | None, text: str, entities: dict) -> dict:
+def _ensemble(zs: dict | None, feat: dict, pkl: dict | None, sm_result: dict | None, text: str, entities: dict) -> dict:
     results = [r for r in [zs, feat, pkl] if r is not None]
 
     scam_votes = sum(1 for r in results if r["is_scam"])
     is_scam = scam_votes > len(results) / 2
+
+    # Social media override
+    if sm_result and sm_result.get("has_reports"):
+        is_scam = True
+        confidence = 90
+        scam_type = "Social Media Reported Scam"
+        method = "social-media-reports"
+        
+        reasons = _build_reasons(text, entities)
+        reasons.extend(sm_result.get("sources", []))
+        
+        logger.info("Ensemble overriden by Social Media Reports: %s", sm_result["sources"])
+        return {
+            "is_scam": is_scam,
+            "scam_type": scam_type,
+            "confidence": confidence,
+            "method": method,
+            "reasons": reasons,
+        }
 
     # Trust AI if it's confident
     if zs and zs["is_scam"] and zs["confidence"] >= 55:

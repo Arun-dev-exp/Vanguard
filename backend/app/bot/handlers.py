@@ -151,7 +151,7 @@ async def analyze_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await update.message.chat.send_action("typing")
 
     try:
-        result = nlp_analyze(user_text, user_lang=user_lang)
+        result = await nlp_analyze(user_text, user_lang=user_lang)
         logger.info(
             "Result: scam=%s type=%s conf=%d method=%s",
             result["is_scam"], result["scam_type"],

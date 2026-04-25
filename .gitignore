@@ -69,3 +69,4 @@ coverage/
 # GSD planning (local only)
 .agent/
 .planning/
+*.pkl

@@ -38,6 +38,13 @@ API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/
 # Derived
 ANALYZE_ENDPOINT: str = f"{API_BASE_URL}/analyze"
 
+# Social Media API Credentials
+REDDIT_CLIENT_ID: str = os.getenv("REDDIT_CLIENT_ID", "")
+REDDIT_CLIENT_SECRET: str = os.getenv("REDDIT_CLIENT_SECRET", "")
+REDDIT_USER_AGENT: str = os.getenv("REDDIT_USER_AGENT", "python:vanguard:v1.0")
+
+TWITTER_BEARER_TOKEN: str = os.getenv("TWITTER_BEARER_TOKEN", "")
+
 # Logging
 LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper()
 
